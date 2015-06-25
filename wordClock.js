@@ -5,9 +5,11 @@
 window.onload =  function () {
     function WordClock () {
         this.isAdjustedClock = false;
+        this.currentSeconds = 0;
         this.currentMinutes = 0;
         this.currentHours = 0;
         this.adjustInterval = 0;
+        this.intervalID = 0;
     }
     WordClock.prototype.generateClock = function () {
         var minuteWords = ['quarter', 'twenty', 'five', 'half', 'ten'];
@@ -45,13 +47,21 @@ window.onload =  function () {
 
 
     WordClock.prototype._updateClock = function () {
-        var hourWords = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+        var hourWords = ["twelve","one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"];
 
         var currentTime = new Date(Date.now());
+        console.log(currentTime);
+        this.currentSeconds = currentTime.getSeconds();
+        console.log("seconds" + this.currentSeconds);
         this.currentMinutes = currentTime.getMinutes();
-        if (!this.isAdjustedClock)
+        console.log("minutes" + this.currentMinutes);
+        if (this.currentMinutes % 5 !== 0)
             this._adjustClock();
-        else this.adjustInterval = 300000;
+        else {
+            //window.clearInterval(this.intervalID);
+            this.adjustInterval = 300000;
+        }
+
         this.currentHours =  currentTime.getHours();
         if(this.currentHours > 12) {
             this.currentHours -= 12;
@@ -72,7 +82,7 @@ window.onload =  function () {
             elementsToEnable.push(document.getElementById("sw_past"));
         }
 
-        elementsToEnable.push(document.getElementById("hh_" + hourWords[this.currentHours-1]));
+        elementsToEnable.push(document.getElementById("hh_" + hourWords[this.currentHours]));
 
 
         if (this.currentMinutes >= 0 && this.currentMinutes <= 3) {
@@ -97,7 +107,7 @@ window.onload =  function () {
             element.className = "clockWordEnabled";
         }
 
-        window.setInterval(this._updateClock.bind(this), this.adjustInterval);
+        window.setTimeout(this._updateClock.bind(this), this.adjustInterval);
     };
 
     WordClock.prototype._resetClock = function () {
@@ -110,16 +120,18 @@ window.onload =  function () {
 
     WordClock.prototype._adjustClock = function () {
         var result = this.currentMinutes % 5;
+
         if (result !== 0) {
             if (result < 2) {
                 this.currentMinutes -= result;
             } else {
                 this.currentMinutes += (5-result);
             }
+            console.log("result" + result);
 
-            this.adjustInterval = result * 60 * 1000;
-        }
-        this.isAdjustedClock = true;
+            this.adjustInterval = ((5-result) * 60 * 1000) - (this.currentSeconds*1000);
+            console.log("adjustInterval" + this.adjustInterval);
+        } else this.adjustInterval = 300000;
     }
     var clock = new WordClock();
     clock.generateClock();
