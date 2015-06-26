@@ -1,0 +1,31 @@
+.clockWordEnabled {
+    color: white;
+    text-shadow: white 0 0 5px, white 0 0 15px;
+}
+.clockWordDisabled, .wordClock {
+    color: #C5B7A7;
+}
+html, body {
+    height: 100%;
+    background-color: #F7B560;
+}
+.clockContainer {
+    position: relative;
+    text-align: center;
+
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+.wordClock {
+    display: inline-block;
+    margin: auto;
+    padding: 80px;
+
+    background-color: #3C556E;
+
+    font-family: monospace;
+    font-size: 36pt;
+    text-align: center;
+}

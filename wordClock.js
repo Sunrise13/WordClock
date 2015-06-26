@@ -4,67 +4,69 @@
 
 window.onload =  function () {
     function WordClock () {
-        this.isAdjustedClock = false;
-        this.currentSeconds = 0;
-        this.currentMinutes = 0;
-        this.currentHours = 0;
-        this.adjustInterval = 0;
-        this.intervalID = 0;
+
+        this.currentSeconds = this.currentMinutes = this.currentHours = this.updateInterval = 0;
+        this.clockWords = null;
     }
+
+    WordClock.CLOCK_MULTIPLE_OF_NUM = 5;
+    WordClock.SEC_IN_MIN = WordClock.MIN_IN_HR = 60;
+    WordClock.MSEC_IN_SEC = 1000;
+    WordClock.TWELVE_HOUR_CLOCK_FORMAT = 12;
+
     WordClock.prototype.generateClock = function () {
+
+        var hourWords = ["twelve","one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"];
         var minuteWords = ['quarter', 'twenty', 'five', 'half', 'ten'];
-        var hourWords = ['nine', 'one', 'six', 'three', 'four', 'five', 'eleven', 'seven', 'twelve', 'ten', 'oclock'];
-        var specWords = ['to', 'past'];
-        var clockWords = {
-            "minuteWords": {
-                "values": minuteWords,
-                "prefix": "mm_"
+        var specWords = ['to', 'past', 'oclock'];
+
+        this.clockWords = {
+            minuteWords: {
+                values: minuteWords,
+                prefix: "mm_"
             },
-            "specWords": {
-                "values": specWords,
-                "prefix": "sw_"
+            specWords: {
+                values: specWords,
+                prefix: "sw_"
             },
-            "hourWords": {
-                "values": hourWords,
-                "prefix": "hh_"
+            hourWords: {
+                values: hourWords,
+                prefix: "hh_"
             }
         };
 
-        for (var clockWord in clockWords) {
-            var words = clockWords[clockWord].values;
-            for (var i in words) {
-                var element = document.createElement("span");
-                element.id = clockWords[clockWord].prefix + words[i];
-                element.className = "clockWordDisabled";
-                element.innerHTML = words[i];
-                document.body.appendChild(element);
-                document.body.appendChild(document.createElement("br"));
+        for (var clockWord in this.clockWords) {
+            if (this.clockWords.hasOwnProperty(clockWord)) {
+                var words = this.clockWords[clockWord].values;
+                var element;
+                for (var i in words) {
+                    if (words.hasOwnProperty(i)) {
+                        element = document.getElementById(this.clockWords[clockWord].prefix + words[i]);
+                        element.className = "clockWordDisabled";
+                    }
+                }
             }
-
         }
         this._updateClock();
     };
 
-
     WordClock.prototype._updateClock = function () {
-        var hourWords = ["twelve","one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"];
 
-        var currentTime = new Date(Date.now());
+        var currentTime = this._clockSimulator();
         console.log(currentTime);
         this.currentSeconds = currentTime.getSeconds();
         console.log("seconds" + this.currentSeconds);
         this.currentMinutes = currentTime.getMinutes();
         console.log("minutes" + this.currentMinutes);
-        if (this.currentMinutes % 5 !== 0)
+        if (this.currentMinutes % WordClock.CLOCK_MULTIPLE_OF_NUM !== 0) {
             this._adjustClock();
-        else {
-            //window.clearInterval(this.intervalID);
-            this.adjustInterval = 300000;
+        } else {
+            this.updateInterval = WordClock.CLOCK_MULTIPLE_OF_NUM * WordClock.SEC_IN_MIN * WordClock.MSEC_IN_SEC;
         }
 
-        this.currentHours =  currentTime.getHours();
-        if(this.currentHours > 12) {
-            this.currentHours -= 12;
+        this.currentHours = currentTime.getHours();
+        if(this.currentHours >= WordClock.TWELVE_HOUR_CLOCK_FORMAT) {
+            this.currentHours -= WordClock.TWELVE_HOUR_CLOCK_FORMAT;
         }
 
         this._resetClock();
@@ -72,67 +74,99 @@ window.onload =  function () {
         var elementsToEnable = [];
 
         if (this.currentMinutes > 30) {
+            this.currentHours++;
             this.currentMinutes = 60 - this.currentMinutes;
-            if (this.currentMinutes >=0 && this.currentMinutes <=3) {
-                this.currentHours++;
-            } else {
+
+            if (this.currentMinutes !==0) {
                 elementsToEnable.push(document.getElementById("sw_to"));
             }
-        } else {
+        } else if (this.currentMinutes > 0) {
             elementsToEnable.push(document.getElementById("sw_past"));
         }
 
-        elementsToEnable.push(document.getElementById("hh_" + hourWords[this.currentHours]));
+        elementsToEnable.push(document.getElementById("hh_" + this.clockWords.hourWords.values[this.currentHours]));
 
-
-        if (this.currentMinutes >= 0 && this.currentMinutes <= 3) {
-            elementsToEnable.push(document.getElementById("hh_oclock"));
-        } else if (this.currentMinutes > 3 && this.currentMinutes <=7) {
-            elementsToEnable.push(document.getElementById("mm_five"));
-        } else if (this.currentMinutes > 7 && this.currentMinutes <=12) {
-            elementsToEnable.push(document.getElementById("mm_ten"));
-        } else if (this.currentMinutes > 12 && this.currentMinutes <= 17) {
-            elementsToEnable.push(document.getElementById("mm_quarter"));
-        } else if (this.currentMinutes > 17 && this.currentMinutes <= 22) {
-            elementsToEnable.push(document.getElementById("mm_twenty"));
-        } else if (this.currentMinutes > 22 && this.currentMinutes <= 27) {
-            elementsToEnable.push(document.getElementById("mm_twenty"));
-            elementsToEnable.push(document.getElementById("mm_five"));
-        } else if (this.currentMinutes > 27 && this.currentMinutes <= 30) {
-            elementsToEnable.push(document.getElementById("mm_half"));
+        switch (this.currentMinutes) {
+            case 0: elementsToEnable.push(document.getElementById("sw_oclock")); break;
+            case 5:  elementsToEnable.push(document.getElementById("mm_five")); break;
+            case 10: elementsToEnable.push(document.getElementById("mm_ten")); break;
+            case 15: elementsToEnable.push(document.getElementById("mm_quarter")); break;
+            case 20: elementsToEnable.push(document.getElementById("mm_twenty")); break;
+            case 25: elementsToEnable.push(document.getElementById("mm_twenty"));
+                     elementsToEnable.push(document.getElementById("mm_five")); break;
+            case 30: elementsToEnable.push(document.getElementById("mm_half")); break;
+           // default: throw new Error("Invalid minutes");
         }
 
-        for (var i in elementsToEnable) {
+
+        for (var i = 0; i<elementsToEnable.length; i++) {
             var element = elementsToEnable[i];
             element.className = "clockWordEnabled";
         }
 
-        window.setTimeout(this._updateClock.bind(this), this.adjustInterval);
+
+
+        window.setTimeout(this._updateClock.bind(this), 2000);
+
     };
 
     WordClock.prototype._resetClock = function () {
         var enabledElements = (document.getElementsByClassName("clockWordEnabled"));
-        for (var i in enabledElements) {
+        for (var i=enabledElements.length - 1; i>0; i--) {
             var element = enabledElements[i];
-            element.className = "clockWordDisable";
+            element.className = "clockWordDisabled";
         }
     };
 
     WordClock.prototype._adjustClock = function () {
-        var result = this.currentMinutes % 5;
+        var remainder = this.currentMinutes % WordClock.CLOCK_MULTIPLE_OF_NUM;
 
-        if (result !== 0) {
-            if (result < 2) {
-                this.currentMinutes -= result;
+        if (remainder !== 0) {
+            if (remainder < 2) {
+                this.currentMinutes -= remainder;
             } else {
-                this.currentMinutes += (5-result);
+                this.currentMinutes += (WordClock.CLOCK_MULTIPLE_OF_NUM - remainder);
             }
-            console.log("result" + result);
+            console.log("remainder" + remainder);
 
-            this.adjustInterval = ((5-result) * 60 * 1000) - (this.currentSeconds*1000);
-            console.log("adjustInterval" + this.adjustInterval);
-        } else this.adjustInterval = 300000;
+            var secBeforeUpdate = ((WordClock.CLOCK_MULTIPLE_OF_NUM - remainder) * WordClock.SEC_IN_MIN);
+            this.updateInterval = (secBeforeUpdate - this.currentSeconds) * WordClock.MSEC_IN_SEC;
+
+            console.log("updateInterval" + this.updateInterval);
+
+        } else {
+            this.updateInterval = WordClock.CLOCK_MULTIPLE_OF_NUM * WordClock.SEC_IN_MIN * WordClock.MSEC_IN_SEC;
+        }
+    };
+    WordClock.prototype._clockSimulator = function (datez, interval) {
+        var date = datez;
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+
+        var simulator = function () {
+            this.updateInterval = interval;
+
+            minutes+=5;
+
+            if (hours < 24) {
+                if (minutes > 60) {
+                    minutes = 0;
+                    hours++;
+                } else {
+                    hours = 0;
+                    minutes = 0;
+                }
+
+                date.setHours(hours);
+                date.setMinutes(minutes);
+            }
+
+            return date;
+        }
+
+        return simulator;
     }
     var clock = new WordClock();
+    WordClock.prototype._clockSimulator = clock._clockSimulator(new Date(), 3000);
     clock.generateClock();
 };
