@@ -4,7 +4,8 @@
 
 window.onload =  function () {
     function WordClock () {
-
+        this.simulateClock = false;
+        this.simulateClockInterval = 3 * WordClock.MSEC_IN_SEC;
         this.currentSeconds = this.currentMinutes = this.currentHours = this.updateInterval = 0;
         this.clockWords = null;
     }
@@ -13,8 +14,13 @@ window.onload =  function () {
     WordClock.SEC_IN_MIN = WordClock.MIN_IN_HR = 60;
     WordClock.MSEC_IN_SEC = 1000;
     WordClock.TWELVE_HOUR_CLOCK_FORMAT = 12;
+    WordClock.TWENTY_FOUR_HOUR_CLOCK_FORMAT = 24;
 
     WordClock.prototype.generateClock = function () {
+
+        if (this.simulateClock === true) {
+            WordClock.prototype._clockSimulator = clock._generateClockSimulator(new Date());
+        }
 
         var hourWords = ["twelve","one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"];
         var minuteWords = ['quarter', 'twenty', 'five', 'half', 'ten'];
@@ -52,36 +58,39 @@ window.onload =  function () {
 
     WordClock.prototype._updateClock = function () {
 
-        var currentTime = this._clockSimulator();
-        console.log(currentTime);
+        var elementsToEnable = [];
+            
+        var currentTime = this.simulateClock ? this._clockSimulator() : new Date();
+
         this.currentSeconds = currentTime.getSeconds();
-        console.log("seconds" + this.currentSeconds);
         this.currentMinutes = currentTime.getMinutes();
-        console.log("minutes" + this.currentMinutes);
+        this.currentHours = currentTime.getHours();
+
         if (this.currentMinutes % WordClock.CLOCK_MULTIPLE_OF_NUM !== 0) {
             this._adjustClock();
         } else {
             this.updateInterval = WordClock.CLOCK_MULTIPLE_OF_NUM * WordClock.SEC_IN_MIN * WordClock.MSEC_IN_SEC;
         }
 
-        this.currentHours = currentTime.getHours();
-        if(this.currentHours >= WordClock.TWELVE_HOUR_CLOCK_FORMAT) {
-            this.currentHours -= WordClock.TWELVE_HOUR_CLOCK_FORMAT;
-        }
-
         this._resetClock();
-
-        var elementsToEnable = [];
 
         if (this.currentMinutes > 30) {
             this.currentHours++;
-            this.currentMinutes = 60 - this.currentMinutes;
+            this.currentMinutes = WordClock.MIN_IN_HR - this.currentMinutes;
 
             if (this.currentMinutes !==0) {
                 elementsToEnable.push(document.getElementById("sw_to"));
             }
         } else if (this.currentMinutes > 0) {
             elementsToEnable.push(document.getElementById("sw_past"));
+        }
+
+        if (this.currentHours === WordClock.TWENTY_FOUR_HOUR_CLOCK_FORMAT) {
+            this.currentHours = 0;
+        }
+
+        if(this.currentHours >= WordClock.TWELVE_HOUR_CLOCK_FORMAT) {
+            this.currentHours -= WordClock.TWELVE_HOUR_CLOCK_FORMAT;
         }
 
         elementsToEnable.push(document.getElementById("hh_" + this.clockWords.hourWords.values[this.currentHours]));
@@ -95,7 +104,7 @@ window.onload =  function () {
             case 25: elementsToEnable.push(document.getElementById("mm_twenty"));
                      elementsToEnable.push(document.getElementById("mm_five")); break;
             case 30: elementsToEnable.push(document.getElementById("mm_half")); break;
-           // default: throw new Error("Invalid minutes");
+            default: throw new Error("Invalid minutes");
         }
 
 
@@ -104,15 +113,14 @@ window.onload =  function () {
             element.className = "clockWordEnabled";
         }
 
-
-
-        window.setTimeout(this._updateClock.bind(this), 2000);
+        var interval = this.simulateClock ? this.simulateClockInterval : this.updateInterval;
+        window.setTimeout(this._updateClock.bind(this), interval);
 
     };
 
     WordClock.prototype._resetClock = function () {
         var enabledElements = (document.getElementsByClassName("clockWordEnabled"));
-        for (var i=enabledElements.length - 1; i>0; i--) {
+        for (var i=enabledElements.length - 1; i>=0; i--) {
             var element = enabledElements[i];
             element.className = "clockWordDisabled";
         }
@@ -127,39 +135,34 @@ window.onload =  function () {
             } else {
                 this.currentMinutes += (WordClock.CLOCK_MULTIPLE_OF_NUM - remainder);
             }
-            console.log("remainder" + remainder);
 
             var secBeforeUpdate = ((WordClock.CLOCK_MULTIPLE_OF_NUM - remainder) * WordClock.SEC_IN_MIN);
             this.updateInterval = (secBeforeUpdate - this.currentSeconds) * WordClock.MSEC_IN_SEC;
-
-            console.log("updateInterval" + this.updateInterval);
 
         } else {
             this.updateInterval = WordClock.CLOCK_MULTIPLE_OF_NUM * WordClock.SEC_IN_MIN * WordClock.MSEC_IN_SEC;
         }
     };
-    WordClock.prototype._clockSimulator = function (datez, interval) {
-        var date = datez;
+    WordClock.prototype._generateClockSimulator = function (date) {
+        var date = date;
         var hours = date.getHours();
         var minutes = date.getMinutes();
 
         var simulator = function () {
-            this.updateInterval = interval;
+            minutes+=WordClock.CLOCK_MULTIPLE_OF_NUM;
 
-            minutes+=5;
-
-            if (hours < 24) {
-                if (minutes > 60) {
+            if (hours < WordClock.TWENTY_FOUR_HOUR_CLOCK_FORMAT) {
+                if (minutes >= WordClock.MIN_IN_HR) {
                     minutes = 0;
                     hours++;
-                } else {
+                }
+            } else {
                     hours = 0;
                     minutes = 0;
                 }
 
-                date.setHours(hours);
-                date.setMinutes(minutes);
-            }
+            date.setHours(hours);
+            date.setMinutes(minutes);
 
             return date;
         }
@@ -167,6 +170,6 @@ window.onload =  function () {
         return simulator;
     }
     var clock = new WordClock();
-    WordClock.prototype._clockSimulator = clock._clockSimulator(new Date(), 3000);
+    clock.simulateClock = true;
     clock.generateClock();
 };
