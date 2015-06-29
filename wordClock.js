@@ -143,13 +143,13 @@ window.onload =  function () {
             this.updateInterval = WordClock.CLOCK_MULTIPLE_OF_NUM * WordClock.SEC_IN_MIN * WordClock.MSEC_IN_SEC;
         }
     };
-    WordClock.prototype._generateClockSimulator = function (date) {
-        var date = date;
+    WordClock.prototype._generateClockSimulator = function (startDate) {
+        var date = startDate;
         var hours = date.getHours();
         var minutes = date.getMinutes();
 
-        var simulator = function () {
-            minutes+=WordClock.CLOCK_MULTIPLE_OF_NUM;
+        return function () {
+            minutes += WordClock.CLOCK_MULTIPLE_OF_NUM;
 
             if (hours < WordClock.TWENTY_FOUR_HOUR_CLOCK_FORMAT) {
                 if (minutes >= WordClock.MIN_IN_HR) {
@@ -157,19 +157,18 @@ window.onload =  function () {
                     hours++;
                 }
             } else {
-                    hours = 0;
-                    minutes = 0;
-                }
+                hours = 0;
+                minutes = 0;
+            }
 
             date.setHours(hours);
             date.setMinutes(minutes);
 
             return date;
-        }
-
-        return simulator;
-    }
+        };
+    };
     var clock = new WordClock();
     clock.simulateClock = true;
     clock.generateClock();
+
 };
