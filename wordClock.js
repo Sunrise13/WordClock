@@ -130,7 +130,7 @@ window.onload =  function () {
         var remainder = this.currentMinutes % WordClock.CLOCK_MULTIPLE_OF_NUM;
 
         if (remainder !== 0) {
-            if (remainder < 2) {
+            if (remainder < 3) {
                 this.currentMinutes -= remainder;
             } else {
                 this.currentMinutes += (WordClock.CLOCK_MULTIPLE_OF_NUM - remainder);
@@ -168,7 +168,7 @@ window.onload =  function () {
         };
     };
     var clock = new WordClock();
-    clock.simulateClock = true;
+    clock.simulateClock = false;
     clock.generateClock();
 
 };
